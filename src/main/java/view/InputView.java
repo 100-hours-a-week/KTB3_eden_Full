@@ -14,7 +14,7 @@ public class InputView {
 
     public List<String> readStudent() {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("본인의 이름과 과정명을 입력해주세요.(이정원-풀스택, 이정원-AI, 이정원-클라우드)");
+        System.out.println("본인의 이름과 과정명을 입력해주세요.(이정원-풀스택, 이정원-인공지능, 이정원-클라우드)");
         String input = scanner.nextLine();
         inputParser.validateStudentInput(input);
         return Arrays.asList(input.split("-"));
