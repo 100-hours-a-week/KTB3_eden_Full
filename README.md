@@ -20,7 +20,9 @@
   
 
 ## 실행 
-![run_ex](https://github.com/user-attachments/assets/9c706a81-1819-41f4-b047-09b2e87e776e)
+https://github.com/user-attachments/assets/cb4a1542-80c7-4cda-97ab-9a75447332ec
+
+
 ### 사용자 입력
     카카오 테크 부트캠프 이름맞추기 퀴즈에 오신걸 환영합니다.
     본인의 이름과 과정명을 입력해주세요.(이정원-풀스택, 이정원-인공지능, 이정원-클라우드)
