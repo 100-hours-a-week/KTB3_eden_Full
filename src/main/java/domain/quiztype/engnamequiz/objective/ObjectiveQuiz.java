@@ -11,7 +11,6 @@ import static domain.QuizConstants.*;
 
 public class ObjectiveQuiz extends Quiz {
 
-
     protected List<String> options;
     protected StudentCatalog studentCatalog;
 
@@ -66,6 +65,9 @@ public class ObjectiveQuiz extends Quiz {
     @Override
     public boolean isCorrect(String answerInput){
         int indexInput = validateOptionInput(answerInput);
+        if(indexInput == -1){
+            return false;
+        }
         return getOption(indexInput).equals(answer);
     }
 
