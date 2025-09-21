@@ -16,6 +16,10 @@ public class OutputView {
         System.out.println("이용해 주셔서 감사합니다 퀴즈를 종료합니다.");
     }
 
+    public void printScore(Student player, int playerScore) {
+        System.out.println(player.getKoreanName() + "님의 총 점수는 = " + playerScore + " 입니다");
+    }
+
     public void printStudents() {
         List<Student> students = StudentsInput.readStudents();
         for (Student student : students) {
