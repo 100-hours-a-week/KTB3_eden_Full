@@ -1,6 +1,7 @@
 package controller;
 
 import domain.Quiz;
+import domain.QuizTimer;
 import domain.Student;
 import domain.StudentCatalog;
 import domain.quiztype.engnamequiz.objective.ObjectiveQuiz;
@@ -11,6 +12,8 @@ import view.InputView;
 import view.OutputView;
 import java.util.List;
 import java.util.function.Supplier;
+
+import static domain.QuizConstants.*;
 
 public class QuizManager {
     private final InputView inputView;
@@ -32,33 +35,41 @@ public class QuizManager {
 
     public void quizStart(Student player) {
         int playerScore = 0;
+        QuizTimer timer = new QuizTimer(QUIZ_TIME_LIMIT);
+        Thread timerThread = new Thread(timer);
+        timerThread.start();
 
-        while (true) {
-            int inputQuizTypeInput = inputQuizTypeInput();
+        while (!timer.isTimeOver()) {
+            int inputQuizTypeInput = inputQuizTypeInput(timer);
             switch (inputQuizTypeInput) {
-                case 1 -> playerScore = startQuiz(playerScore, () -> generateSubjectiveQuiz(player));
-                case 2 -> playerScore = startQuiz(playerScore, () -> generateObjectiveQuiz(player, studentCatalog));
-                case 3 -> playerScore = startQuiz(playerScore, () -> generateAnagramQuiz(player));
+                case 1 -> playerScore = startQuiz(playerScore, timer, () -> generateSubjectiveQuiz(player));
+                case 2 -> playerScore = startQuiz(playerScore, timer, () -> generateObjectiveQuiz(player, studentCatalog));
+                case 3 -> playerScore = startQuiz(playerScore, timer, () -> generateAnagramQuiz(player));
                 case 5 -> {
                     break;
                 }
-                default ->{
-                    System.out.println("명시된 퀴즈 번호를 입력해주세요");
+                default -> {
+                    System.out.println("퀴즈 범위에 맞게 입력해주세요");
                 }
             }
-            if(inputQuizTypeInput == 5) break;
+            if (inputQuizTypeInput == 5) break;
         }
-        System.out.println("총 점수 = " + playerScore);
+        outputView.printScore(player, playerScore);
     }
 
-    private int startQuiz(int playerScore, Supplier<? extends Quiz> quizSupplier) {
+    private int startQuiz(int playerScore, QuizTimer timer, Supplier<? extends Quiz> quizSupplier) {
         Quiz quiz = quizSupplier.get();
-        return quizProgress(playerScore, quiz);
+        return quizProgress(playerScore, timer, quiz);
     }
 
-    private int quizProgress(int playerScore, Quiz quiz) {
+    private int quizProgress(int playerScore, QuizTimer timer, Quiz quiz) {
         outputView.printQuiz(quiz);
         String answerInput = inputView.readAnswer();
+
+        if(timer.isTimeOver()) {
+            System.out.println("시간이 초과되어 입력은 무효처리 됩니다.");
+            return playerScore;
+        }
 
         if(quiz.isCorrect(answerInput)) {
             outputView.printCorrectMsg(quiz);
@@ -98,16 +109,26 @@ public class QuizManager {
         }
     }
 
-    public int inputQuizTypeInput(){
-        while(true){
+    public int inputQuizTypeInput(QuizTimer timer) {
+        final int[] result = {-1};
+        Thread inputThread = new Thread(() -> {
             try {
                 outputView.printQuizTypes();
-                return inputView.readQuizType();
+                result[0] = inputView.readQuizType();
+            } catch (QuizException e) {
+                if(!timer.isTimeOver()) System.out.println(e.getMessage());
             }
-            catch (QuizException e) {
-                System.out.println(e.getMessage());
+        });
+
+        inputThread.start();
+
+        while(inputThread.isAlive()){
+            if(timer.isTimeOver()){
+                inputThread.interrupt();
+                return 5;
             }
         }
+        return result[0];
     }
 
     public Student validateStudent(List<String> rawStudent) throws QuizException {
