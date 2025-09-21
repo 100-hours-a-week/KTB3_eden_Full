@@ -1,28 +1,33 @@
-package domain.quiztype.objective;
+package domain.quiztype.engnamequiz.objective;
 
 import domain.Quiz;
 import domain.Student;
 import domain.StudentCatalog;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class ObjectiveQuiz extends Quiz {
+import static domain.QuizConstants.*;
 
-    private static final int OBJECTIVE_QUIZ_SCORE = 3;
-    private static final int OPTIONSIZE = 3;
+public class ObjectiveQuiz extends Quiz {
 
     protected List<String> options;
     protected StudentCatalog studentCatalog;
 
     public ObjectiveQuiz(Student student, StudentCatalog studentCatalog) {
-        super(student);
+        this.student = student;
         this.studentCatalog = studentCatalog;
         generateQuiz();
     }
 
+    @Override
     protected void generateQuiz() {
+        generateQuestion();
+        answer = student.getEngFirstName();
+        score = OBJECTIVE_QUIZ_SCORE;
+    }
+
+    private void generateQuestion() {
         StringBuilder sb = new StringBuilder();
         sb.append("문제 : ").append(student.getKoreanName()).append("의 영어 이름은?\n");
         options = generateOptions();
@@ -32,13 +37,12 @@ public class ObjectiveQuiz extends Quiz {
             sb.append(i+1).append(".").append(option).append(" ");
         }
         question = sb.toString();
-        score = OBJECTIVE_QUIZ_SCORE;
     }
 
     protected List<String> generateOptions() {
         options = new ArrayList<>();
         options.add(student.getEngFirstName());
-        for (int i = 0; i < OPTIONSIZE; i++) {
+        for (int i = 0; i < OPTIONS_SIZE-1; i++) {
             options.add(getStudentOptions((student)).getEngFirstName());
         }
         Collections.shuffle(options);
@@ -55,6 +59,25 @@ public class ObjectiveQuiz extends Quiz {
     }
 
     public String getOption(int userInput) {
-        return options.get(userInput-1);
+        return options.get(userInput - 1);
+    }
+
+    @Override
+    public boolean isCorrect(String answerInput){
+        int indexInput = validateOptionInput(answerInput);
+        if(indexInput == -1){
+            return false;
+        }
+        return getOption(indexInput).equals(answer);
+    }
+
+    public int validateOptionInput(String rawOptionInput) {
+        try {
+            int indexInt = Integer.parseInt(rawOptionInput.trim());
+            if(indexInt < 1 || indexInt > OPTIONS_SIZE) return -1;
+            return indexInt;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 }
