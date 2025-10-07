@@ -1,9 +1,9 @@
-package domain.quiztype.engnamequiz.objective.subjective;
+package domain.quiztype.engnamequiz.subjective;
 
 import domain.Student;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import static domain.QuizConstants.*;
 
 public class AnagramQuiz extends SubjectiveQuiz {
@@ -22,11 +22,11 @@ public class AnagramQuiz extends SubjectiveQuiz {
     }
 
     private List<Character> generateAnagram() {
-        List<Character> ans = new ArrayList<>();
         String engFirstName = student.getEngFirstName();
-        for(int i = 0; i < engFirstName.length(); i++) {
-            ans.add(engFirstName.charAt(i));
-        }
+        List<Character> ans = engFirstName.chars()
+                .mapToObj(c -> (char) c)
+                .collect(Collectors.toList());
+
         Collections.shuffle(ans);
         return ans;
     }
