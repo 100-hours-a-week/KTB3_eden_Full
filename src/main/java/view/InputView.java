@@ -21,7 +21,6 @@ public class InputView {
     }
 
     public String readAnswer() {
-        Scanner scanner = new Scanner(System.in);
         return scanner.nextLine();
     }
 
