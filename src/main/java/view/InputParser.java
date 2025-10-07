@@ -4,6 +4,7 @@ package view;
 import exception.QuizException;
 
 import static domain.QuizConstants.OPTIONS_SIZE;
+import static domain.QuizConstants.WRONG_ANSWER;
 import static exception.QuizExceptionType.*;
 
 public class InputParser {
@@ -28,10 +29,10 @@ public class InputParser {
     public int validateOptionInput(String rawOptionInput) {
         try {
             int indexInt = Integer.parseInt(rawOptionInput.trim());
-            if(indexInt<1 || indexInt > OPTIONS_SIZE) return -1;
+            if(indexInt<1 || indexInt > OPTIONS_SIZE) return WRONG_ANSWER;
             return indexInt;
         } catch (NumberFormatException e) {
-            return -1;
+            return WRONG_ANSWER;
         }
     }
 
