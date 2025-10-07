@@ -1,29 +1,39 @@
 package controller;
 
-import domain.Quiz;
-import domain.QuizTimer;
-import domain.Student;
-import domain.StudentCatalog;
+import domain.*;
 import domain.quiztype.engnamequiz.objective.ObjectiveQuiz;
-import domain.quiztype.engnamequiz.objective.subjective.AnagramQuiz;
-import domain.quiztype.engnamequiz.objective.subjective.SubjectiveQuiz;
+import domain.quiztype.engnamequiz.subjective.AnagramQuiz;
+import domain.quiztype.engnamequiz.subjective.SubjectiveQuiz;
 import exception.QuizException;
+import exception.QuizExceptionType;
+import view.InputParser;
 import view.InputView;
 import view.OutputView;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static domain.QuizConstants.*;
 
 public class QuizManager {
+    private final InputParser inputParser;
     private final InputView inputView;
     private final OutputView outputView;
     private final StudentCatalog studentCatalog;
+    private final Map<QuizType, Function<Student, Quiz>> quizGenerators;
 
-    public QuizManager(InputView inputView, OutputView outputView, StudentCatalog studentCatalog) {
+    public QuizManager(InputParser inputParser, InputView inputView, OutputView outputView, StudentCatalog studentCatalog) {
+        this.inputParser = inputParser;
         this.inputView = inputView;
         this.outputView = outputView;
         this.studentCatalog = studentCatalog;
+
+        this.quizGenerators = Map.of(
+                QuizType.SUBJECTIVE_QUIZ, player -> new SubjectiveQuiz(getSameCourseStudent(player)),
+                QuizType.OBJECTIVE_QUIZ, player -> new ObjectiveQuiz(getSameCourseStudent(player), this.studentCatalog, inputParser),
+                QuizType.ANAGRAM_QUIZ, player -> new AnagramQuiz(getSameCourseStudent(player))
+        );
     }
 
     public void run() {
@@ -35,24 +45,28 @@ public class QuizManager {
 
     public void quizStart(Student player) {
         int playerScore = 0;
-        QuizTimer timer = new QuizTimer(QUIZ_TIME_LIMIT);
+        QuizTimer timer = new QuizTimer(QUIZ_TIME_LIMIT, outputView);
         Thread timerThread = new Thread(timer);
         timerThread.start();
 
         while (!timer.isTimeOver()) {
             int inputQuizTypeInput = inputQuizTypeInput(timer);
-            switch (inputQuizTypeInput) {
-                case 1 -> playerScore = startQuiz(playerScore, timer, () -> generateSubjectiveQuiz(player));
-                case 2 -> playerScore = startQuiz(playerScore, timer, () -> generateObjectiveQuiz(player, studentCatalog));
-                case 3 -> playerScore = startQuiz(playerScore, timer, () -> generateAnagramQuiz(player));
-                case 5 -> {
-                    break;
-                }
-                default -> {
-                    System.out.println("퀴즈 범위에 맞게 입력해주세요");
-                }
+            QuizType quizType;
+            try {
+                quizType = QuizType.fromNumber(inputQuizTypeInput);
+            } catch (QuizException e) {
+                System.out.println(e.getMessage());
+                continue;
             }
-            if (inputQuizTypeInput == 5) break;
+
+            if (quizType == QuizType.EXIT_QUIZ) {
+                timerThread.interrupt();
+                break;
+            }
+            Function<Student, Quiz> generator = quizGenerators.get(quizType);
+            if(generator != null) {
+                playerScore = startQuiz(playerScore, timer, () -> generator.apply(player));
+            }
         }
         outputView.printScore(player, playerScore);
     }
@@ -67,7 +81,7 @@ public class QuizManager {
         String answerInput = inputView.readAnswer();
 
         if(timer.isTimeOver()) {
-            System.out.println("시간이 초과되어 입력은 무효처리 됩니다.");
+            outputView.printTimeOverInputIgnored();
             return playerScore;
         }
 
@@ -77,21 +91,6 @@ public class QuizManager {
         } else  { outputView.printWrongMsg(quiz); }
 
         return playerScore;
-    }
-
-    public SubjectiveQuiz generateSubjectiveQuiz(Student player) {
-        SubjectiveQuiz quiz = new SubjectiveQuiz(getSameCourseStudent(player));
-        return quiz;
-    }
-
-    public ObjectiveQuiz generateObjectiveQuiz(Student player, StudentCatalog studentCatalog) {
-        ObjectiveQuiz quiz = new ObjectiveQuiz(getSameCourseStudent(player),studentCatalog);
-        return quiz;
-    }
-
-    public AnagramQuiz generateAnagramQuiz(Student player) {
-        AnagramQuiz quiz = new AnagramQuiz(getSameCourseStudent(player));
-        return quiz;
     }
 
     public Student getSameCourseStudent(Student player) {
@@ -125,13 +124,14 @@ public class QuizManager {
         while(inputThread.isAlive()){
             if(timer.isTimeOver()){
                 inputThread.interrupt();
-                return 5;
+                return QuizType.EXIT_QUIZ.getQuizTypeNumber();
             }
         }
         return result[0];
     }
 
     public Student validateStudent(List<String> rawStudent) throws QuizException {
-        return studentCatalog.findByKoreanNameAndCourse(rawStudent.get(0), rawStudent.get(1));
+        return studentCatalog.findByKoreanNameAndCourse(rawStudent.get(0), rawStudent.get(1))
+                .orElseThrow(() -> new QuizException(QuizExceptionType.NOT_FOUND_STUDENT));
     }
 }
