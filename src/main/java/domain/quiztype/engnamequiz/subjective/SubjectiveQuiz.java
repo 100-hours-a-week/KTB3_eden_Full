@@ -1,4 +1,4 @@
-package domain.quiztype.engnamequiz.objective.subjective;
+package domain.quiztype.engnamequiz.subjective;
 
 import domain.Quiz;
 import domain.Student;
