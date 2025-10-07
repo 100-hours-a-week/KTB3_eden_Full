@@ -3,9 +3,12 @@ package domain.quiztype.engnamequiz.objective;
 import domain.Quiz;
 import domain.Student;
 import domain.StudentCatalog;
+import view.InputParser;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static domain.QuizConstants.*;
 
@@ -13,10 +16,12 @@ public class ObjectiveQuiz extends Quiz {
 
     protected List<String> options;
     protected StudentCatalog studentCatalog;
+    private final InputParser inputParser;
 
-    public ObjectiveQuiz(Student student, StudentCatalog studentCatalog) {
+    public ObjectiveQuiz(Student student, StudentCatalog studentCatalog, InputParser inputParser) {
         this.student = student;
         this.studentCatalog = studentCatalog;
+        this.inputParser = inputParser;
         generateQuiz();
     }
 
@@ -28,23 +33,22 @@ public class ObjectiveQuiz extends Quiz {
     }
 
     private void generateQuestion() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("문제 : ").append(student.getKoreanName()).append("의 영어 이름은?\n");
         options = generateOptions();
+        String optionsText = IntStream.range(0, options.size())
+                .mapToObj(i -> (i+1) + "." + options.get(i))
+                .collect(Collectors.joining(" "));
 
-        for(int i = 0; i < options.size(); i++){
-            String option = options.get(i);
-            sb.append(i+1).append(".").append(option).append(" ");
-        }
-        question = sb.toString();
+        question = String.format("문제 : %s의 영어 이름은? \n%s", student.getKoreanName(), optionsText);
     }
 
     protected List<String> generateOptions() {
         options = new ArrayList<>();
         options.add(student.getEngFirstName());
-        for (int i = 0; i < OPTIONS_SIZE-1; i++) {
-            options.add(getStudentOptions((student)).getEngFirstName());
-        }
+        options.addAll(
+                IntStream.range(0, OPTIONS_SIZE -1)
+                        .mapToObj(i -> getStudentOptions(student).getEngFirstName())
+                        .toList()
+        );
         Collections.shuffle(options);
         return options;
     }
@@ -64,20 +68,9 @@ public class ObjectiveQuiz extends Quiz {
 
     @Override
     public boolean isCorrect(String answerInput){
-        int indexInput = validateOptionInput(answerInput);
-        if(indexInput == -1){
-            return false;
-        }
-        return getOption(indexInput).equals(answer);
-    }
+        int indexInput = inputParser.validateOptionInput(answerInput);
+        if(indexInput == WRONG_ANSWER) return false;
 
-    public int validateOptionInput(String rawOptionInput) {
-        try {
-            int indexInt = Integer.parseInt(rawOptionInput.trim());
-            if(indexInt < 1 || indexInt > OPTIONS_SIZE) return -1;
-            return indexInt;
-        } catch (NumberFormatException e) {
-            return -1;
-        }
+        return getOption(indexInput).equals(answer);
     }
 }
