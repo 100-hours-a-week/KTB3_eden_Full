@@ -3,6 +3,7 @@ package domain;
 import exception.QuizException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -42,15 +43,12 @@ public class StudentCatalog {
     }
 
     // 이름과 수강명으로 학생 반환 -> 같은 수강에는 동명이인 없다고 가정
-    public Student findByKoreanNameAndCourse(String koreanName, String courseName){
-        List<Student> studentsInCourse = studentsByCourse.get(courseName);
-        if(studentsInCourse == null){
-            throw new QuizException(INVALID_INPUT_COURSE);
-        }
+    public Optional<Student> findByKoreanNameAndCourse(String koreanName, String courseName) {
+        List<Student> studentsInCourse = Optional.ofNullable(studentsByCourse.get(courseName))
+                .orElseThrow(() -> new QuizException(INVALID_INPUT_COURSE));
 
         return studentsInCourse.stream()
                 .filter(student -> student.getKoreanName().equals(koreanName))
-                .findFirst()
-                .orElseThrow(() -> new QuizException(NOT_FOUND_STUDENT));
+                .findFirst();
     }
 }
