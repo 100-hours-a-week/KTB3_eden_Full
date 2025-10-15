@@ -17,7 +17,7 @@ public class Main {
         List<Student> students = StudentsInput.readStudents();
         StudentCatalog studentCatalog = new StudentCatalog(students);
 
-        QuizManager quizManager = new QuizManager(inputView, outputView,studentCatalog);
+        QuizManager quizManager = new QuizManager(inputParser, inputView, outputView,studentCatalog);
         quizManager.run();
     }
 }
