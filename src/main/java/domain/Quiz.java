@@ -1,16 +1,10 @@
 package domain;
 
-public class Quiz {
+public abstract class Quiz {
     protected Student student;
     protected String question;
     protected String answer;
     protected int score;
-
-    public Quiz(Student student) {
-        this.student = student;
-        this.answer = student.getEngFirstName();
-        this.score = 1;
-    }
 
     public String getQuestion() {
         return question;
@@ -20,11 +14,8 @@ public class Quiz {
         return answer;
     }
 
-    public int getScore() {
-        return score;
-    }
+    public int getScore() { return score; }
 
-    public Boolean isCorrect(String answerInput) {
-        return answerInput.equals(this.answer);
-    }
+    protected abstract void generateQuiz();
+    public abstract boolean isCorrect(String answerInput);
 }
